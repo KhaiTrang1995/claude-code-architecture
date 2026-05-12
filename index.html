@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="vi-en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>Claude Code Architecture — AI Agent System (Bilingual VI/EN)</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1e293b;
+      --border: #334155;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --amber: #f59e0b;
+      --green: #10b981;
+      --red: #ef4444;
+      --cyan: #06b6d4;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden
+    }
+
+    .hero {
+      text-align: center;
+      padding: 60px 20px 40px;
+      position: relative
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(139, 92, 246, .12) 0%, transparent 70%);
+      pointer-events: none
+    }
+
+    .hero h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 700px;
+      margin: 0 auto
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap
+    }
+
+    .badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface)
+    }
+
+    .loop-label {
+      text-align: center;
+      margin: 30px 0 10px;
+      font-size: 1rem;
+      color: var(--amber);
+      font-weight: 600;
+      letter-spacing: 2px
+    }
+
+    /* Flow connector */
+    .flow-arrow {
+      display: flex;
+      justify-content: center;
+      padding: 10px 0
+    }
+
+    .flow-arrow svg {
+      width: 40px;
+      height: 40px;
+      animation: pulse 2s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: .4;
+        transform: translateY(0)
+      }
+
+      50% {
+        opacity: 1;
+        transform: translateY(4px)
+      }
+    }
+
+    /* Layers */
+    .layers {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px
+    }
+
+    .layer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .3s, box-shadow .3s
+    }
+
+    .layer:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .4)
+    }
+
+    .layer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px
+    }
+
+    .layer-1::before {
+      background: linear-gradient(90deg, #3b82f6, #60a5fa)
+    }
+
+    .layer-2::before {
+      background: linear-gradient(90deg, #8b5cf6, #a78bfa)
+    }
+
+    .layer-3::before {
+      background: linear-gradient(90deg, #f59e0b, #fbbf24)
+    }
+
+    .layer-4::before {
+      background: linear-gradient(90deg, #10b981, #34d399)
+    }
+
+    .layer-5::before {
+      background: linear-gradient(90deg, #ef4444, #f87171)
+    }
+
+    .layer-6::before {
+      background: linear-gradient(90deg, #06b6d4, #22d3ee)
+    }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px
+    }
+
+    .layer-num {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      flex-shrink: 0
+    }
+
+    .layer-1 .layer-num {
+      background: rgba(59, 130, 246, .15);
+      color: var(--blue)
+    }
+
+    .layer-2 .layer-num {
+      background: rgba(139, 92, 246, .15);
+      color: var(--purple)
+    }
+
+    .layer-3 .layer-num {
+      background: rgba(245, 158, 11, .15);
+      color: var(--amber)
+    }
+
+    .layer-4 .layer-num {
+      background: rgba(16, 185, 129, .15);
+      color: var(--green)
+    }
+
+    .layer-5 .layer-num {
+      background: rgba(239, 68, 68, .15);
+      color: var(--red)
+    }
+
+    .layer-6 .layer-num {
+      background: rgba(6, 182, 212, .15);
+      color: var(--cyan)
+    }
+
+    .layer-title h2 {
+      font-size: 1.2rem;
+      font-weight: 700
+    }
+
+    .layer-title p {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-top: 2px
+    }
+
+    .layer-title .en {
+      font-size: .76rem;
+      color: var(--cyan);
+      margin-top: 1px;
+      font-style: italic
+    }
+
+    .card .en {
+      font-size: .72rem;
+      color: var(--cyan);
+      font-style: italic;
+      margin-top: 4px;
+      line-height: 1.4
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px
+    }
+
+    .card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      transition: border-color .3s
+    }
+
+    .card:hover {
+      border-color: var(--purple)
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 8px
+    }
+
+    .card h3 {
+      font-size: .92rem;
+      font-weight: 600;
+      margin-bottom: 6px
+    }
+
+    .card p {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    .card .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: .65rem;
+      font-weight: 600;
+      margin-top: 8px
+    }
+
+    .tag-blue {
+      background: rgba(59, 130, 246, .15);
+      color: var(--blue)
+    }
+
+    .tag-green {
+      background: rgba(16, 185, 129, .15);
+      color: var(--green)
+    }
+
+    .tag-amber {
+      background: rgba(245, 158, 11, .15);
+      color: var(--amber)
+    }
+
+    .tag-red {
+      background: rgba(239, 68, 68, .15);
+      color: var(--red)
+    }
+
+    .tag-purple {
+      background: rgba(139, 92, 246, .15);
+      color: var(--purple)
+    }
+
+    /* Agent loop animation */
+    .agent-loop {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 10px 0
+    }
+
+    .loop-step {
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: .9rem;
+      position: relative;
+      text-align: center;
+      min-width: 130px
+    }
+
+    .loop-step.perceive {
+      background: rgba(59, 130, 246, .15);
+      color: var(--blue);
+      border: 1px solid rgba(59, 130, 246, .3)
+    }
+
+    .loop-step.act {
+      background: rgba(245, 158, 11, .15);
+      color: var(--amber);
+      border: 1px solid rgba(245, 158, 11, .3)
+    }
+
+    .loop-step.observe {
+      background: rgba(16, 185, 129, .15);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, .3)
+    }
+
+    .loop-connector {
+      font-size: 1.2rem;
+      color: var(--muted);
+      padding: 0 8px
+    }
+
+    /* Mapping table */
+    .mapping {
+      max-width: 1100px;
+      margin: 0 auto 60px;
+      padding: 0 20px
+    }
+
+    .mapping h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center
+    }
+
+    .mapping table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border)
+    }
+
+    .mapping th {
+      background: var(--surface2);
+      padding: 12px 16px;
+      text-align: left;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px
+    }
+
+    .mapping td {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      font-size: .85rem
+    }
+
+    .mapping td code {
+      background: var(--surface2);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: .8rem;
+      color: var(--cyan)
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: var(--muted);
+      font-size: .8rem;
+      border-top: 1px solid var(--border)
+    }
+
+    @media(max-width:768px) {
+      .hero h1 {
+        font-size: 1.8rem
+      }
+
+      .cards {
+        grid-template-columns: 1fr
+      }
+
+      .agent-loop {
+        flex-direction: column;
+        gap: 8px
+      }
+
+      .loop-connector {
+        transform: rotate(90deg)
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="hero">
+    <h1>Claude Code Architecture</h1>
+    <p>Hệ thống AI Agent tự động hóa lập trình — vận hành trên vòng lặp <strong>Perception → Action →
+        Observation</strong>, module hóa thành 6 layer rõ ràng.</p>
+    <p
+      style="color:var(--cyan);font-size:.95rem;font-style:italic;margin-top:8px;max-width:700px;margin-left:auto;margin-right:auto">
+      An AI Agent system for programming automation — operating on a Perception → Action → Observation loop, modularized
+      into 6 distinct layers.</p>
+    <div class="badge-row">
+      <span class="badge"> AI Agent</span>
+      <span class="badge"> Agentic Loop</span>
+      <span class="badge"> Context-Aware</span>
+      <span class="badge"> Multi-Agent</span>
+      <span class="badge"> Permission-Gated</span>
+    </div>
+  </div>
+
+  <div class="layers">
+
+    <!-- Layer 1 -->
+    <div class="layer layer-1">
+      <div class="layer-header">
+        <div class="layer-num">①</div>
+        <div class="layer-title">
+          <h2>Input & Permission Layer</h2>
+          <p>Tiếp nhận yêu cầu & kiểm soát quyền truy cập</p>
+          <p class="en">Receives requests & controls access permissions</p>
+        </div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Input Layer</h3>
+          <p>Tiếp nhận yêu cầu từ CLI, IDE (VSCode, JetBrains), và CI/CD pipeline.</p>
+          <p class="en">Accepts requests from CLI, IDE (VSCode, JetBrains), and CI/CD pipelines.</p>
+          <span class="tag tag-blue">Multi-source</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Session Manager</h3>
+          <p>Duy trì trạng thái phiên: Resume (tiếp tục), Fork (rẽ nhánh), Persist (lưu trữ).</p>
+          <p class="en">Maintains session state: Resume, Fork, and Persist modes.</p>
+          <span class="tag tag-blue">Stateful</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Permission Gate</h3>
+          <p>Chốt an ninh YAML 3 cấp: Deny → Approve → Allow. Quan sát mọi thứ trước khi vào agent loop.</p>
+          <p class="en">3-level YAML security gate: Deny → Approve → Allow. Observes everything before entering the
+            agent loop.</p>
+          <span class="tag tag-red">Security</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow"><svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 5v14M19 12l-7 7-7-7" />
+      </svg></div>
+
+    <!-- Layer 2 -->
+    <div class="layer layer-2">
+      <div class="layer-header">
+        <div class="layer-num"></div>
+        <div class="layer-title">
+          <h2>Knowledge Layer</h2>
+          <p>Bộ não cung cấp dữ liệu — tối ưu xử lý ngữ cảnh lớn</p>
+          <p class="en">The brain that supplies data — optimized for large context processing</p>
+        </div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Context Compressor</h3>
+          <p>Nén ngữ cảnh 3 lớp (ngưỡng 92%): Summarize → Prune → Truncate. Ghi ra <code>.agent_memory.md</code>.</p>
+          <p class="en">3-layer context compression (92% threshold): Summarize → Prune → Truncate.</p>
+          <span class="tag tag-purple">92% threshold</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Memory Store</h3>
+          <p>Lưu trữ bộ nhớ xuyên phiên: Long-term, Short-term, và Episodic memory.</p>
+          <p class="en">Cross-session memory storage: Long-term, Short-term, and Episodic memory.</p>
+          <span class="tag tag-purple">Cross-session</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Skill Registry</h3>
+          <p>Tiêm (inject) kỹ năng vào prompt theo ngữ cảnh — on-demand injection.</p>
+          <p class="en">Injects skills into prompts based on context — on-demand injection.</p>
+          <span class="tag tag-purple">On-demand</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Task Graph</h3>
+          <p>Sắp xếp ưu tiên & dependencies giữa các tác vụ — DAG-based scheduling.</p>
+          <p class="en">Prioritizes & manages task dependencies — DAG-based scheduling.</p>
+          <span class="tag tag-purple">DAG</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow"><svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 5v14M19 12l-7 7-7-7" />
+      </svg></div>
+
+    <!-- Layer 3 -->
+    <div class="layer layer-3">
+      <div class="layer-header">
+        <div class="layer-num">③</div>
+        <div class="layer-title">
+          <h2>Master Agent Loop</h2>
+          <p>Trái tim hệ thống — vòng lặp Perceive → Act → Observe</p>
+          <p class="en">The heart of the system — Perceive → Act → Observe loop</p>
+        </div>
+      </div>
+      <div class="agent-loop">
+        <div class="loop-step perceive"> Perceive<br><small>Đọc & phân tích context<br><em
+              style="color:var(--cyan)">Read & analyze context</em></small></div>
+        <div class="loop-connector"></div>
+        <div class="loop-step act"> Act<br><small>Gọi tool / Spawn agent<br><em style="color:var(--cyan)">Call tool /
+              Spawn agent</em></small></div>
+        <div class="loop-connector">→</div>
+        <div class="loop-step observe"> Observe<br><small>Thu thập & đánh giá<br><em style="color:var(--cyan)">Collect &
+              evaluate</em></small></div>
+        <div class="loop-connector">↩</div>
+      </div>
+      <div
+        class="cards"
+        style="margin-top:16px"
+      >
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Self-correcting</h3>
+          <p>Tự phát hiện lỗi và thử lại với cách tiếp cận khác.</p>
+          <p class="en">Auto-detects errors and retries with a different approach.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Goal-driven</h3>
+          <p>Theo dõi mục tiêu cuối cùng, không lạc hướng giữa các bước.</p>
+          <p class="en">Tracks the final goal, stays on course between steps.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Branching Decisions</h3>
+          <p>Quyết định gọi tool trực tiếp hoặc spawn subagent cho task phức tạp.</p>
+          <p class="en">Decides to call tools directly or spawn subagents for complex tasks.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow"><svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 5v14M19 12l-7 7-7-7" />
+      </svg></div>
+
+    <!-- Layer 4 -->
+    <div class="layer layer-4">
+      <div class="layer-header">
+        <div class="layer-num"></div>
+        <div class="layer-title">
+          <h2>Integration & Execution Layer</h2>
+          <p>Nơi các hành động thực sự diễn ra</p>
+          <p class="en">Where actual actions take place</p>
+        </div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">🔌</div>
+          <h3>MCP Runtime</h3>
+          <p>Model Context Protocol — auto-discover tools từ Filesystem, Git, Custom servers.</p>
+          <p class="en">Model Context Protocol — auto-discovers tools from Filesystem, Git, Custom servers.</p>
+          <span class="tag tag-green">Auto-discover</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Tool Dispatch</h3>
+          <p>Bộ điều phối: bash, read, write, grep, edit — mỗi tool có handler riêng biệt.</p>
+          <p class="en">Dispatcher: bash, read, write, grep, edit — each tool has a dedicated handler.</p>
+          <span class="tag tag-green">Modular</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Streaming Runtime</h3>
+          <p>Thực thi song song (parallel execution) theo thời gian thực.</p>
+          <p class="en">Real-time parallel execution of tool calls.</p>
+          <span class="tag tag-green">Parallel</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Prompt Cache</h3>
+          <p>Tái sử dụng stable prefix — giảm chi phí gọi model xuống còn ~10%.</p>
+          <p class="en">Reuses stable prefix — reduces model call cost to ~10%.</p>
+          <span class="tag tag-amber">Cost: 10%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow"><svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 5v14M19 12l-7 7-7-7" />
+      </svg></div>
+
+    <!-- Layer 5 -->
+    <div class="layer layer-5">
+      <div class="layer-header">
+        <div class="layer-num">⑤</div>
+        <div class="layer-title">
+          <h2>Multi-Agent Layer</h2>
+          <p>Chia nhỏ tác vụ phức tạp cho các agent con</p>
+          <p class="en">Breaks down complex tasks for child agents</p>
+        </div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Subagent Spawner</h3>
+          <p>Tạo agent con với ngữ cảnh cô lập — giao việc rành mạch, không chia sẻ state.</p>
+          <p class="en">Creates child agents with isolated context — clear delegation, no shared state.</p>
+          <span class="tag tag-red">Isolated</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Teammate Mailboxes</h3>
+          <p>Redis pub/sub — gửi tin nhắn tức thời giữa các agent. FSM: IDLE → REQUEST → WAIT → RESPOND.</p>
+          <p class="en">Redis pub/sub — instant messaging between agents. FSM: IDLE → REQUEST → WAIT → RESPOND.</p>
+          <span class="tag tag-red">Redis pub/sub</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Worktree Isolator</h3>
+          <p>Branch riêng cho từng task — zero conflicts. Atomic lock từ Autonomous Board đảm bảo merge an toàn.</p>
+          <p class="en">Separate branch per task — zero conflicts. Atomic lock ensures safe merges.</p>
+          <span class="tag tag-red">Zero conflicts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow"><svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 5v14M19 12l-7 7-7-7" />
+      </svg></div>
+
+    <!-- Layer 6 -->
+    <div class="layer layer-6">
+      <div class="layer-header">
+        <div class="layer-num">⑥</div>
+        <div class="layer-title">
+          <h2>Observability & Output Layer</h2>
+          <p>Giám sát, trả kết quả & feedback loop</p>
+          <p class="en">Monitoring, delivering results & feedback loop</p>
+        </div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Event Bus</h3>
+          <p>Bắt sự kiện vòng đời (lifecycle hooks): tool_start, tool_end, error, session_end.</p>
+          <p class="en">Captures lifecycle events: tool_start, tool_end, error, session_end.</p>
+          <span class="tag tag-blue">Lifecycle</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Background Executor</h3>
+          <p>Daemon threads chạy non-blocking: logging, metrics, state persistence.</p>
+          <p class="en">Non-blocking daemon threads: logging, metrics, state persistence.</p>
+          <span class="tag tag-blue">Non-blocking</span>
+        </div>
+        <div class="card">
+          <div class="card-icon"></div>
+          <h3>Task Result</h3>
+          <p>Output đã xác minh — tự động cập nhật Memory Store để hệ thống "học" từ thao tác vừa thực hiện.</p>
+          <p class="en">Verified output — auto-updates Memory Store so the system "learns" from performed actions.</p>
+          <span class="tag tag-green">Verified</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Mapping Table -->
+  <div class="mapping">
+    <h2>📎 Mapping: Kiến trúc ↔ Cấu trúc Project · <em style="color:var(--cyan)">Architecture ↔ Project Structure</em>
+    </h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Files trong Scaffold · <em style="color:var(--cyan)">Scaffold Files</em></th>
+          <th>Vai trò · <em style="color:var(--cyan)">Role</em></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td> Input & Permission</td>
+          <td><code>.claude/settings.json</code></td>
+          <td>Permissions, hooks, model selection</td>
+        </tr>
+        <tr>
+          <td> Knowledge</td>
+          <td><code>CLAUDE.md</code> · <code>.claude/rules/</code> · <code>.claude/skills/</code></td>
+          <td>Context, rules, on-demand skills</td>
+        </tr>
+        <tr>
+          <td> Agent Loop</td>
+          <td>Claude Code runtime (built-in)</td>
+          <td>Core orchestration engine</td>
+        </tr>
+        <tr>
+          <td> Integration</td>
+          <td><code>.mcp.json</code> · <code>.claude/hooks/</code></td>
+          <td>MCP servers, event scripts</td>
+        </tr>
+        <tr>
+          <td> Multi-Agent</td>
+          <td><code>.claude/agents/*.md</code></td>
+          <td>Subagent definitions</td>
+        </tr>
+        <tr>
+          <td> Observability</td>
+          <td><code>.claude/hooks/</code> · Event scripts</td>
+          <td>Monitoring, output, feedback</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    Claude Code Architecture Visualization — TechSphereX TA &copy; 2026
+  </footer>
+
+  <script>
+    // Intersection Observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.layer, .flow-arrow').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+  </script>
+</body>
+
+</html>
