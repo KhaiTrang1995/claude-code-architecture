@@ -9,6 +9,8 @@
 
 ---
 
+<img width="1456" height="940" alt="unnamed (1)" src="https://github.com/user-attachments/assets/733f1525-bb79-454c-8d68-3a8ba6ff60ca" />
+
 ## 📌 Dự án này gồm gì? · *What's in this project?*
 
 | Thành phần · *Component* | Mô tả · *Description* |
